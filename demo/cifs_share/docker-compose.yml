@@ -1,0 +1,38 @@
+services:
+  samba:
+    build:
+      context: ../..
+      dockerfile: demo/cifs_share/Dockerfile.samba
+
+  watchdog:
+    build:
+      context: ../..
+      dockerfile: demo/cifs_share/Dockerfile
+    privileged: true
+    security_opt:
+      - apparmor:unconfined
+    depends_on:
+      - samba
+    command: ["python", "/app/demo/cifs_share/watchdog_demo.py"]
+
+  watchpuppy2:
+    build:
+      context: ../..
+      dockerfile: demo/cifs_share/Dockerfile
+    privileged: true
+    security_opt:
+      - apparmor:unconfined
+    depends_on:
+      - samba
+    command: ["python", "/app/demo/cifs_share/watchpuppy2_demo.py"]
+
+  writer:
+    build:
+      context: ../..
+      dockerfile: demo/cifs_share/Dockerfile
+    privileged: true
+    security_opt:
+      - apparmor:unconfined
+    depends_on:
+      - samba
+    command: ["python", "/app/demo/cifs_share/writer_demo.py"]

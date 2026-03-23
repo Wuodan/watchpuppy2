@@ -1,0 +1,15 @@
+FROM debian:12-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends samba \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /srv/share \
+    && useradd --system --no-create-home demo \
+    && chown demo:demo /srv/share \
+    && chmod 0770 /srv/share \
+    && printf 'demo\ndemo\n' | smbpasswd -a -s demo
+
+COPY demo/cifs_share/smb.conf /etc/samba/smb.conf
+
+CMD ["smbd", "--foreground", "--no-process-group"]
