@@ -42,6 +42,7 @@ esac
 project_name="proof_${scenario//-/_}"
 log_file="$artifacts_dir/${scenario}.log"
 summary_file="$artifacts_dir/${scenario}.json"
+report_file="$artifacts_dir/${scenario}.md"
 
 cleanup() {
   docker compose -p "$project_name" -f "$compose_file" down --volumes --remove-orphans >/dev/null 2>&1 || true
@@ -100,4 +101,12 @@ cat >"$summary_file" <<EOF
   "watchdog_event_seen": $watchdog_event_seen,
   "watchpuppy2_event_seen": $watchpuppy2_event_seen
 }
+EOF
+
+cat >"$report_file" <<EOF
+# Filesystem Proof Result
+
+| Scenario | Watchdog observer | Watchpuppy2 observer | Watchdog saw events | Watchpuppy2 saw events | Result |
+| --- | --- | --- | --- | --- | --- |
+| $scenario | $watchdog_observer | $watchpuppy2_observer | $watchdog_event_seen | $watchpuppy2_event_seen | pass |
 EOF

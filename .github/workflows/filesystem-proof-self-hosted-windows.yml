@@ -20,3 +20,14 @@ jobs:
         shell: pwsh
         run: |
           Write-Error "windows-host-bind-mount proof is not implemented yet"
+
+      - name: Publish proof summary
+        shell: pwsh
+        run: |
+          @"
+          # Filesystem Proof Result
+
+          | Scenario | Result |
+          | --- | --- |
+          | windows-host-bind-mount | pending |
+          "@ >> $env:GITHUB_STEP_SUMMARY
