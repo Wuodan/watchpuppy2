@@ -7,7 +7,6 @@ from watchdog.events import DirCreatedEvent
 
 from watchpuppy2._observer import (
     _filesystem_type,
-    _parse_mountinfo_line,
     _path_is_under_mountpoint,
     _ProbeEventHandler,
     _supports_inotify,
@@ -77,42 +76,32 @@ class TestCreateObserver(TestCase):
 
 
 class TestFilesystemType(TestCase):
-    @patch("pathlib.Path.read_text")
-    def test_filesystem_type(self, read_text: Mock) -> None:
-        read_text.return_value = (
-            "38 33 0:34 / / rw,relatime - overlay overlay rw\n"
-            "60 38 0:50 / /mnt/share rw,relatime - cifs //samba/share rw\n"
-        )
+    @patch("watchpuppy2._observer.psutil.disk_partitions")
+    def test_filesystem_type(self, disk_partitions: Mock) -> None:
+        disk_partitions.return_value = [
+            Mock(mountpoint="/", fstype="overlay"),
+            Mock(mountpoint="/mnt/share", fstype="cifs"),
+        ]
 
         result = _filesystem_type(Path("/mnt/share/example.txt"))
 
         self.assertEqual("cifs", result)
 
-    @patch("pathlib.Path.read_text")
-    def test_filesystem_type_returns_none_on_read_error(self, read_text: Mock) -> None:
-        read_text.side_effect = OSError("boom")
+    @patch("watchpuppy2._observer.psutil.disk_partitions")
+    def test_filesystem_type_returns_none_on_read_error(self, disk_partitions: Mock) -> None:
+        disk_partitions.side_effect = OSError("boom")
 
         result = _filesystem_type(Path("/mnt/share/example.txt"))
 
         self.assertIsNone(result)
 
-    def test_parse_mountinfo_line(self) -> None:
-        result = _parse_mountinfo_line("60 38 0:50 / /mnt/share rw,relatime - cifs //samba/share rw")
-
-        self.assertEqual(("/mnt/share", "cifs"), result)
-
-    def test_parse_mountinfo_line_returns_none_for_invalid_input(self) -> None:
-        result = _parse_mountinfo_line("invalid")
-
-        self.assertEqual((None, None), result)
-
     def test_path_is_under_mountpoint(self) -> None:
-        result = _path_is_under_mountpoint(Path("/mnt/share/example.txt"), "/mnt/share")
+        result = _path_is_under_mountpoint(Path("/mnt/share/example.txt"), Path("/mnt/share"))
 
         self.assertTrue(result)
 
     def test_path_is_under_mountpoint_returns_false_for_other_mount(self) -> None:
-        result = _path_is_under_mountpoint(Path("/mnt/share/example.txt"), "/other")
+        result = _path_is_under_mountpoint(Path("/mnt/share/example.txt"), Path("/other"))
 
         self.assertFalse(result)
 

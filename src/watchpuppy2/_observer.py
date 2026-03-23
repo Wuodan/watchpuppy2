@@ -3,6 +3,7 @@ import threading
 import time
 from pathlib import Path
 
+import psutil
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers.api import BaseObserver
 from watchdog.observers.inotify import InotifyObserver
@@ -13,7 +14,6 @@ _PROBE_FILE_NAME_PREFIX = ".watchpuppy2-probe-"
 _PROBE_TIMEOUT_SECONDS = 1.0
 _PROBE_WAIT_INTERVAL_SECONDS = 0.01
 _POLLING_TIMEOUT_SECONDS = 1.0
-_MOUNTINFO_MOUNT_POINT_INDEX = 4
 _FORCE_POLLING_FILESYSTEM_TYPES = frozenset(
     {
         "cifs",
@@ -65,41 +65,27 @@ def create_observer(path: Path, *, recursive: bool) -> BaseObserver:
 
 def _filesystem_type(path: Path) -> str | None:
     resolved_path = path.resolve()
-    best_match = ""
-    best_type: str | None = None
     try:
-        mountinfo = Path("/proc/self/mountinfo").read_text(encoding="utf-8")
+        partitions = psutil.disk_partitions(all=True)
     except OSError:
-        _logger.exception("Could not read /proc/self/mountinfo for path=%s", path)
+        _logger.exception("Could not inspect disk partitions for path=%s", path)
         return None
-    for line in mountinfo.splitlines():
-        mount_point, fs_type = _parse_mountinfo_line(line)
-        if mount_point is None or fs_type is None:
+    partitions_by_depth = sorted(
+        partitions,
+        key=lambda partition: len(Path(partition.mountpoint).parts),
+        reverse=True,
+    )
+    for partition in partitions_by_depth:
+        partition_mountpoint = Path(partition.mountpoint)
+        if not _path_is_under_mountpoint(resolved_path, partition_mountpoint):
             continue
-        if not _path_is_under_mountpoint(resolved_path, mount_point):
-            continue
-        if len(mount_point) > len(best_match):
-            best_match = mount_point
-            best_type = fs_type
-    _logger.debug("Detected filesystem_type=%s for path=%s", best_type, path)
-    return best_type
+        _logger.debug("Detected filesystem_type=%s for path=%s", partition.fstype, path)
+        return partition.fstype
+    _logger.debug("Detected filesystem_type=None for path=%s", path)
+    return None
 
 
-def _parse_mountinfo_line(line: str) -> tuple[str | None, str | None]:
-    if " - " not in line:
-        return None, None
-    pre_separator, post_separator = line.split(" - ", maxsplit=1)
-    pre_fields = pre_separator.split()
-    post_fields = post_separator.split()
-    if len(pre_fields) <= _MOUNTINFO_MOUNT_POINT_INDEX or not post_fields:
-        return None, None
-    mount_point = pre_fields[_MOUNTINFO_MOUNT_POINT_INDEX].replace("\\040", " ")
-    fs_type = post_fields[0]
-    return mount_point, fs_type
-
-
-def _path_is_under_mountpoint(path: Path, mount_point: str) -> bool:
-    mount_path = Path(mount_point)
+def _path_is_under_mountpoint(path: Path, mount_path: Path) -> bool:
     if path == mount_path:
         return True
     return mount_path in path.parents
