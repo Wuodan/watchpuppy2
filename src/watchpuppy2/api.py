@@ -11,10 +11,9 @@ def watch(
     handler: FileSystemEventHandler,
     *,
     recursive: bool = True,
-    mode: str = "auto",
 ) -> BaseObserver:
     watch_path = Path(path)
-    observer = create_observer(watch_path, recursive=recursive, mode=mode)
+    observer = create_observer(watch_path, recursive=recursive)
     observer.schedule(handler, str(watch_path), recursive=recursive)
     observer.start()
     return observer

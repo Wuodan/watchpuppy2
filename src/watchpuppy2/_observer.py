@@ -7,9 +7,6 @@ from watchdog.observers.api import BaseObserver
 from watchdog.observers.inotify import InotifyObserver
 from watchdog.observers.polling import PollingObserver
 
-_AUTO_MODE = "auto"
-_INOTIFY_MODE = "inotify"
-_POLLING_MODE = "polling"
 _PROBE_FILE_NAME_PREFIX = ".watchpuppy2-probe-"
 _PROBE_TIMEOUT_SECONDS = 1.0
 _PROBE_WAIT_INTERVAL_SECONDS = 0.01
@@ -30,13 +27,7 @@ class _ProbeEventHandler(FileSystemEventHandler):
             self._seen.set()
 
 
-def create_observer(path: Path, *, recursive: bool, mode: str) -> BaseObserver:
-    if mode == _INOTIFY_MODE:
-        return InotifyObserver()
-    if mode == _POLLING_MODE:
-        return PollingObserver(timeout=_POLLING_TIMEOUT_SECONDS)
-    if mode != _AUTO_MODE:
-        raise ValueError(f"Unsupported mode: {mode}")
+def create_observer(path: Path, *, recursive: bool) -> BaseObserver:
     if _supports_inotify(path, recursive=recursive):
         return InotifyObserver()
     return PollingObserver(timeout=_POLLING_TIMEOUT_SECONDS)

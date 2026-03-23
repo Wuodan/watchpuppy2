@@ -9,33 +9,9 @@ from watchpuppy2._observer import _ProbeEventHandler, _supports_inotify, create_
 
 
 class TestCreateObserver(TestCase):
-    @patch("watchpuppy2._observer.InotifyObserver")
-    def test_create_observer_inotify(self, inotify_observer: Mock) -> None:
-        observer = Mock()
-        inotify_observer.return_value = observer
-
-        result = create_observer(Path("/tmp/example"), recursive=True, mode="inotify")
-
-        self.assertIs(observer, result)
-        inotify_observer.assert_called_once_with()
-
-    @patch("watchpuppy2._observer.PollingObserver")
-    def test_create_observer_polling(self, polling_observer: Mock) -> None:
-        observer = Mock()
-        polling_observer.return_value = observer
-
-        result = create_observer(Path("/tmp/example"), recursive=True, mode="polling")
-
-        self.assertIs(observer, result)
-        polling_observer.assert_called_once_with(timeout=1.0)
-
-    def test_create_observer_unsupported_mode(self) -> None:
-        with self.assertRaisesRegex(ValueError, "Unsupported mode: invalid"):
-            create_observer(Path("/tmp/example"), recursive=True, mode="invalid")
-
     @patch("watchpuppy2._observer._supports_inotify")
     @patch("watchpuppy2._observer.InotifyObserver")
-    def test_create_observer_auto_uses_inotify_when_probe_succeeds(
+    def test_create_observer_uses_inotify_when_probe_succeeds(
         self,
         inotify_observer: Mock,
         supports_inotify: Mock,
@@ -44,7 +20,7 @@ class TestCreateObserver(TestCase):
         observer = Mock()
         inotify_observer.return_value = observer
 
-        result = create_observer(Path("/tmp/example"), recursive=False, mode="auto")
+        result = create_observer(Path("/tmp/example"), recursive=False)
 
         self.assertIs(observer, result)
         supports_inotify.assert_called_once_with(Path("/tmp/example"), recursive=False)
@@ -52,7 +28,7 @@ class TestCreateObserver(TestCase):
 
     @patch("watchpuppy2._observer._supports_inotify")
     @patch("watchpuppy2._observer.PollingObserver")
-    def test_create_observer_auto_uses_polling_when_probe_fails(
+    def test_create_observer_uses_polling_when_probe_fails(
         self,
         polling_observer: Mock,
         supports_inotify: Mock,
@@ -61,7 +37,7 @@ class TestCreateObserver(TestCase):
         observer = Mock()
         polling_observer.return_value = observer
 
-        result = create_observer(Path("/tmp/example"), recursive=False, mode="auto")
+        result = create_observer(Path("/tmp/example"), recursive=False)
 
         self.assertIs(observer, result)
         supports_inotify.assert_called_once_with(Path("/tmp/example"), recursive=False)

@@ -18,9 +18,9 @@ class TestWatch(TestCase):
         create_observer.return_value = observer
         handler = _Handler()
 
-        result = watch("/tmp/example", handler, recursive=False, mode="polling")
+        result = watch("/tmp/example", handler, recursive=False)
 
         self.assertIs(observer, result)
-        create_observer.assert_called_once_with(Path("/tmp/example"), recursive=False, mode="polling")
+        create_observer.assert_called_once_with(Path("/tmp/example"), recursive=False)
         observer.schedule.assert_called_once_with(handler, "/tmp/example", recursive=False)
         observer.start.assert_called_once_with()
