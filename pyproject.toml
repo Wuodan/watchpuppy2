@@ -1,21 +1,52 @@
 [build-system]
-requires = ["hatchling>=1.27.0"]
+requires = ["hatchling>=1.18,<2", "hatch-vcs>=0.0,<1"]
 build-backend = "hatchling.build"
 
 [project]
 name = "watchpuppy2"
-version = "0.0.0"
+description = "Thin watchdog-based file watching with automatic inotify or polling selection"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Stefan Kuhn" }]
+dependencies = [
+  "watchdog>=6.0.0,<7",
+]
+dynamic = ["version"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/watchpuppy2"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/**",
+  "tests/**",
+  "LICENSE",
+  "README.md",
+  "pyproject.toml",
+]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/watchpuppy2/_version.py"
+
+[tool.coverage.run]
+omit = [
+  "src/*/_version.py",
+]
 
 [tool.ruff]
 line-length = 120
 
 [tool.ruff.lint]
 select = [
-  "E", "F",
-  "I",
-  "UP",
-  "B",
-  "PL",
-  "SLF",
+  "E", "F",        # correctness
+  "I",             # imports
+  "UP",            # pyupgrade
+  "B",             # bugbear
+  "PL",            # pylint rules (incl. protected access)
+  "SLF",           # flake8-self (private member access)
 ]
 per-file-ignores = { "tests/**" = ["SLF001"] }
