@@ -14,14 +14,14 @@ _PROBE_FILE_NAME_PREFIX = ".watchpuppy2-probe-"
 _PROBE_TIMEOUT_SECONDS = 1.0
 _PROBE_WAIT_INTERVAL_SECONDS = 0.01
 _POLLING_TIMEOUT_SECONDS = 1.0
-_FORCE_POLLING_FILESYSTEM_TYPES = frozenset(
+_TRUSTED_NATIVE_FILESYSTEM_TYPES = frozenset(
     {
-        "cifs",
-        "9p",
-        "drvfs",
-        "nfs",
-        "nfs4",
-        "smb3",
+        "ext2",
+        "ext3",
+        "ext4",
+        "xfs",
+        "btrfs",
+        "tmpfs",
     }
 )
 
@@ -48,7 +48,7 @@ class _ProbeEventHandler(FileSystemEventHandler):
 
 def create_observer(path: Path, *, recursive: bool) -> BaseObserver:
     fs_type = _filesystem_type(path)
-    if fs_type in _FORCE_POLLING_FILESYSTEM_TYPES:
+    if fs_type not in _TRUSTED_NATIVE_FILESYSTEM_TYPES:
         _logger.info(
             "Selected PollingObserver for path=%s recursive=%s filesystem_type=%s",
             path,

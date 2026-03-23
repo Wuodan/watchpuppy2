@@ -33,6 +33,23 @@ class TestCreateObserver(TestCase):
         polling_observer.assert_called_once_with(timeout=1.0)
 
     @patch("watchpuppy2._observer._filesystem_type")
+    @patch("watchpuppy2._observer.PollingObserver")
+    def test_create_observer_uses_polling_for_unknown_filesystem_type(
+        self,
+        polling_observer: Mock,
+        filesystem_type: Mock,
+    ) -> None:
+        filesystem_type.return_value = "mysteryfs"
+        observer = Mock()
+        polling_observer.return_value = observer
+
+        result = create_observer(Path("/tmp/example"), recursive=False)
+
+        self.assertIs(observer, result)
+        filesystem_type.assert_called_once_with(Path("/tmp/example"))
+        polling_observer.assert_called_once_with(timeout=1.0)
+
+    @patch("watchpuppy2._observer._filesystem_type")
     @patch("watchpuppy2._observer._supports_inotify")
     @patch("watchpuppy2._observer.InotifyObserver")
     def test_create_observer_uses_inotify_when_probe_succeeds(
