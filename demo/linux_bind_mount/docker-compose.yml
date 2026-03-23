@@ -1,0 +1,24 @@
+services:
+  watchdog:
+    build:
+      context: ../..
+      dockerfile: demo/cifs_share/Dockerfile
+    command: ["python", "/app/demo/linux_bind_mount/watchdog_demo.py", "/shared"]
+    volumes:
+      - ./shared:/shared
+
+  watchpuppy2:
+    build:
+      context: ../..
+      dockerfile: demo/cifs_share/Dockerfile
+    command: ["python", "/app/demo/linux_bind_mount/watchpuppy2_demo.py", "/shared"]
+    volumes:
+      - ./shared:/shared
+
+  writer:
+    build:
+      context: ../..
+      dockerfile: demo/cifs_share/Dockerfile
+    command: ["python", "/app/demo/linux_bind_mount/writer_demo.py", "/shared"]
+    volumes:
+      - ./shared:/shared
