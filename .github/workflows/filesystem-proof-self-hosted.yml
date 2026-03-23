@@ -16,19 +16,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
+      - name: Set up Python environment
         run: |
+          python3 -m venv .venv
+          . .venv/bin/activate
           python -m pip install --upgrade pip
           python -m pip install -r requirements-dev.txt
-          python -m pip install -e .
 
       - name: Run Linux CIFS proof
         run: |
+          . .venv/bin/activate
           ./scripts/run-proof-scenario.sh linux-cifs-share artifacts
 
       - name: Upload proof artifacts
