@@ -1,0 +1,16 @@
+name: Change Validation
+
+"on":
+  workflow_call:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-suite:
+    uses: ./.github/workflows/test-suite.yml
