@@ -15,6 +15,7 @@ expected_watchpuppy2_observer=""
 expected_watchdog_event="false"
 expected_watchpuppy2_event="false"
 expected_watchpuppy2_log=""
+expected_whitelist_native_inotify="false"
 
 case "$scenario" in
   linux-bind-mount)
@@ -24,6 +25,7 @@ case "$scenario" in
     expected_watchdog_event="true"
     expected_watchpuppy2_event="true"
     expected_watchpuppy2_log="Selected InotifyObserver"
+    expected_whitelist_native_inotify="true"
     ;;
   linux-cifs-share)
     compose_file="demo/cifs_share/docker-compose.yml"
@@ -32,6 +34,7 @@ case "$scenario" in
     expected_watchdog_event="false"
     expected_watchpuppy2_event="true"
     expected_watchpuppy2_log="Selected PollingObserver"
+    expected_whitelist_native_inotify="false"
     ;;
   *)
     echo "Unsupported scenario: $scenario" >&2
@@ -56,9 +59,11 @@ docker compose -p "$project_name" -f "$compose_file" logs --no-color >"$log_file
 
 watchdog_observer=$(grep -o "watchdog observer_class=[^ ]*" "$log_file" | tail -n1 | cut -d= -f2 || true)
 watchpuppy2_observer=$(grep -o "watchpuppy2 observer_class=[^ ]*" "$log_file" | tail -n1 | cut -d= -f2 || true)
+filesystem_type=$(grep -o "Detected filesystem_type=[^ ]*" "$log_file" | tail -n1 | cut -d= -f2 || true)
 
 watchdog_event_seen="false"
 watchpuppy2_event_seen="false"
+whitelist_native_inotify="false"
 
 if grep -q "^watchdog-.*watchdog event_type=" "$log_file"; then
   watchdog_event_seen="true"
@@ -66,6 +71,10 @@ fi
 
 if grep -q "^watchpuppy2-.*watchpuppy2 event_type=" "$log_file"; then
   watchpuppy2_event_seen="true"
+fi
+
+if [[ "$watchpuppy2_observer" == "InotifyObserver" ]]; then
+  whitelist_native_inotify="true"
 fi
 
 if [[ "$watchdog_observer" != "$expected_watchdog_observer" ]]; then
@@ -93,20 +102,27 @@ if ! grep -q "$expected_watchpuppy2_log" "$log_file"; then
   exit 1
 fi
 
+if [[ "$whitelist_native_inotify" != "$expected_whitelist_native_inotify" ]]; then
+  echo "Unexpected native inotify whitelist verdict for $scenario: $whitelist_native_inotify" >&2
+  exit 1
+fi
+
 cat >"$summary_file" <<EOF
 {
   "scenario": "$scenario",
+  "filesystem_type": "$filesystem_type",
   "watchdog_observer": "$watchdog_observer",
   "watchpuppy2_observer": "$watchpuppy2_observer",
   "watchdog_event_seen": $watchdog_event_seen,
-  "watchpuppy2_event_seen": $watchpuppy2_event_seen
+  "watchpuppy2_event_seen": $watchpuppy2_event_seen,
+  "whitelist_native_inotify": $whitelist_native_inotify
 }
 EOF
 
 cat >"$report_file" <<EOF
 # Filesystem Proof Result
 
-| Scenario | Watchdog observer | Watchpuppy2 observer | Watchdog saw events | Watchpuppy2 saw events | Result |
-| --- | --- | --- | --- | --- | --- |
-| $scenario | $watchdog_observer | $watchpuppy2_observer | $watchdog_event_seen | $watchpuppy2_event_seen | pass |
+| Scenario | Filesystem type | Whitelist native inotify | Watchdog observer | Watchpuppy2 observer | Watchdog saw events | Watchpuppy2 saw events | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| $scenario | $filesystem_type | $whitelist_native_inotify | $watchdog_observer | $watchpuppy2_observer | $watchdog_event_seen | $watchpuppy2_event_seen | pass |
 EOF
