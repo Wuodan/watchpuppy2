@@ -7,33 +7,13 @@ permissions:
   contents: read
 
 jobs:
-  linux-cifs-share:
+  linux-cifs-share-placeholder:
+    if: false
     runs-on:
       - self-hosted
       - linux
       - filesystem-proof
     steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-
-      - name: Set up Python environment
+      - name: Placeholder
         run: |
-          python3 -m venv .venv
-          . .venv/bin/activate
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-dev.txt
-
-      - name: Run Linux CIFS proof
-        run: |
-          . .venv/bin/activate
-          ./scripts/run-proof-scenario.sh linux-cifs-share artifacts
-
-      - name: Publish proof summary
-        run: |
-          cat artifacts/linux-cifs-share.md >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload proof artifacts
-        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874  # v4.4.0
-        with:
-          name: filesystem-proof-linux-cifs
-          path: artifacts/
+          echo "Self-hosted Linux proof workflow is currently an unused scaffold."
