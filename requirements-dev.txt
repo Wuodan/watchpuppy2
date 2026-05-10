@@ -1,7 +1,7 @@
 # Development dependencies for running tests and linters.
 -r requirements.txt
 pyright>=1.1.409,<2
-pymarkdownlnt>=0.9.36,<1
+pymarkdownlnt>=0.9.37,<1
 pytest>=9.0.3,<10
 pytest-cov>=7.1.0,<8
 ruff>=0.15.12,<1
